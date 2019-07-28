@@ -75,9 +75,16 @@ class TurtleBot2SumoEnv(robot_gazebo_env.RobotGazeboEnv):
     
     def _model_state_callback(self,msg):
         models = msg.name
-        ball_idx =  msg.name.index('unit_sphere')
+        item_name = None
+        for name in msg.name:
+            if 'ball' in name:
+                item_name = name
+                break
+        if item_name is not None:   
+            ball_idx =  msg.name.index(item_name)
+            self.ball_position = [msg.pose[ball_idx].position.x, msg.pose[ball_idx].position.y]
         robot_idx = msg.name.index('mobile_base')
-        self.ball_position = [msg.pose[ball_idx].position.x, msg.pose[ball_idx].position.y]
+        
         self.robot_position = [msg.pose[robot_idx].position.x, msg.pose[robot_idx].position.y]
 
     def _check_all_systems_ready(self):
@@ -98,7 +105,7 @@ class TurtleBot2SumoEnv(robot_gazebo_env.RobotGazeboEnv):
         # We dont need to check for the moment, takes too long
         #self._check_camera_depth_image_raw_ready()
         #self._check_camera_depth_points_ready()
-        #self._check_ball_position()
+        self._check_ball_position()
         #self._check_camera_rgb_image_raw_ready()
         self._check_laser_scan_ready()
         rospy.logdebug("ALL SENSORS READY")

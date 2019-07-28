@@ -64,8 +64,8 @@ class SumoEnv(turtlebot2sumo_env.TurtleBot2SumoEnv):
         self.angular_speed = rospy.get_param('/turtlebot2/angular_speed')
         self.init_linear_forward_speed = rospy.get_param('/turtlebot2/init_linear_forward_speed')
         self.init_linear_turn_speed = rospy.get_param('/turtlebot2/init_linear_turn_speed')
-        self.init_linear_forward_speed = numpy.random.uniform(-1,1)
-        self.init_linear_turn_speed = numpy.random.uniform(-1,1)
+        #self.init_linear_forward_speed = numpy.random.uniform(-1,1)
+        #self.init_linear_turn_speed = numpy.random.uniform(-1,1)
         # We create two arrays based on the binary values that will be assigned
         # In the discretization method.
         #laser_scan = self.get_laser_scan()
@@ -93,7 +93,7 @@ class SumoEnv(turtlebot2sumo_env.TurtleBot2SumoEnv):
         """
         self.move_base( self.init_linear_forward_speed,
                         self.init_linear_turn_speed,
-                        sleep_time=2,
+                        sleep_time=0,
                         epsilon=0.05,
                         update_rate=10)
 
@@ -161,11 +161,9 @@ class SumoEnv(turtlebot2sumo_env.TurtleBot2SumoEnv):
         if self._episode_done:
             rospy.logerr("TurtleBot2 is Too Close to wall==>")
         else:
-            rospy.logerr("TurtleBot2 didnt crash at least ==>")
-       
-       
             current_position = self.get_robot_position()
             ball_position = self.get_ball_position()
+            #rospy.logerr("TurtleBot2 didnt crash at least ==>")
             
             
             MAX_X = 2.5
@@ -191,8 +189,8 @@ class SumoEnv(turtlebot2sumo_env.TurtleBot2SumoEnv):
         reward = 0.0
         current_position = numpy.array(self.get_robot_position())
         ball_position = numpy.array(self.get_ball_position())
-        r_robot = 0.5
-        r_ball = 0.8
+        r_robot = 0.351/2
+        r_ball = 0.5
         p = 0.1
 
         if not done:

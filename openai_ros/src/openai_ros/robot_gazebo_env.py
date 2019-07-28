@@ -1,8 +1,11 @@
-import rospy
+import rospy, tf
+import numpy
 import gym
 from gym.utils import seeding
 from .gazebo_connection import GazeboConnection
 from .controllers_connection import ControllersConnection
+from gazebo_msgs.srv import DeleteModel, SpawnModel
+from geometry_msgs.msg import Quaternion,Pose, Point
 #https://bitbucket.org/theconstructcore/theconstruct_msgs/src/master/msg/RLExperimentInfo.msg
 from openai_ros.msg import RLExperimentInfo
 
@@ -58,6 +61,8 @@ class RobotGazeboEnv(gym.Env):
         return obs, reward, done, info
 
     def reset(self):
+        self.init_linear_forward_speed = numpy.random.uniform(-1,1)
+        self.init_linear_turn_speed = numpy.random.uniform(-1,1)
         rospy.logdebug("Reseting RobotGazeboEnvironment")
         self._reset_sim()
         self._init_env_variables()
@@ -108,6 +113,29 @@ class RobotGazeboEnv(gym.Env):
     # Extension methods
     # ----------------------------
 
+    def _spwan(self):
+            rospy.wait_for_service("gazebo/spawn_sdf_model")
+            self.spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
+
+            with open("/home/lab/openai_ws/src/dql_sumo/gazebo_sumo/spwan_node/ball/ball.sdf", "r") as f:
+                product_xml = f.read()
+            
+            random_pose = numpy.random.uniform(low=-2.5, high=2.5, size=2) 
+
+            orient = Quaternion(*tf.transformations.quaternion_from_euler(0,0,0))
+            item_name   =   "ball_{0}".format(self.episode_num+1)
+            item_pose   =   Pose(Point(x=random_pose[0], y=random_pose[1],    z=0.5),   orient)
+            self.spawn_model(item_name, product_xml, "", item_pose, "world")
+            #print("Spawning model:%s", item_name)
+
+    def _del_model(self):
+        rospy.wait_for_service("gazebo/delete_model")
+        delete_model = rospy.ServiceProxy("gazebo/delete_model", DeleteModel)
+        item_name = "ball_{0}".format(self.episode_num)
+        #print("Deleting model:%s", item_name)
+        delete_model(item_name)
+                
+
     def _reset_sim(self):
         """Resets a simulation
         """
@@ -117,10 +145,13 @@ class RobotGazeboEnv(gym.Env):
             self.gazebo.unpauseSim()
             self.controllers_object.reset_controllers()
             self._check_all_systems_ready()
-            
+            if self.episode_num > 0:
+                self._del_model()
             self.gazebo.pauseSim()
             self.gazebo.resetSim()
             self.gazebo.unpauseSim()
+            self._spwan()
+            
             self.controllers_object.reset_controllers()
             self._check_all_systems_ready()
             self._set_init_pose()
@@ -130,9 +161,12 @@ class RobotGazeboEnv(gym.Env):
             rospy.logwarn("DONT RESET CONTROLLERS")
             self.gazebo.unpauseSim()
             self._check_all_systems_ready()
+            if self.episode_num > 0:
+                self._del_model()
             self.gazebo.pauseSim()
             self.gazebo.resetSim()
             self.gazebo.unpauseSim()
+            self._spwan()
             self._check_all_systems_ready()
             self._set_init_pose()
             self.gazebo.pauseSim()
