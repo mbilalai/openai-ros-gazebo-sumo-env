@@ -199,7 +199,7 @@ class SumoEnv(turtlebot2sumo_env.TurtleBot2SumoEnv):
                 
         else:            
             if self.win == 1:
-                reward = self.ball_out_of_bounds_reward
+                reward = self.ball_out_of_bounds_reward/(self.step_number+1.0)
             else:
                 reward = self.robot_out_of_bounds_penalty
 

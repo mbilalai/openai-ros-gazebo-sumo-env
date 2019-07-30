@@ -10,9 +10,9 @@ turtlebot2: #namespace
     init_linear_forward_speed: 0.0 # Initial linear speed in which we start each episode
     init_linear_turn_speed: 0.0 # Initial angular speed in shich we start each episode
     
-    hit_reward: 1
-    robot_out_of_bounds_penalty: -100 
-    ball_out_of_bounds_reward: 100
+    hit_reward: 0
+    robot_out_of_bounds_penalty: -1 
+    ball_out_of_bounds_reward: 1
 
 
 

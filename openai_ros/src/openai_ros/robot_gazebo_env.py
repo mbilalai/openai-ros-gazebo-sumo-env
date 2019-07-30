@@ -20,7 +20,7 @@ class RobotGazeboEnv(gym.Env):
         self.controllers_object = ControllersConnection(namespace=robot_name_space, controllers_list=controllers_list)
         self.reset_controls = reset_controls
         self.seed()
-
+        self.step_number = 0
         # Set up ROS related variables
         self.episode_num = 0
         self.cumulated_episode_reward = 0
@@ -45,6 +45,8 @@ class RobotGazeboEnv(gym.Env):
         Here we should convert the action num to movement action, execute the action in the
         simulation and get the observations result of performing that action.
         """
+        #if self.step_number > 200:
+            #self.reset()
         rospy.logdebug("START STEP OpenAIROS")
 
         self.gazebo.unpauseSim()
@@ -55,14 +57,13 @@ class RobotGazeboEnv(gym.Env):
         info = {}
         reward = self._compute_reward(obs, done)
         self.cumulated_episode_reward += reward
-
+        self.step_number += 1
         rospy.logdebug("END STEP OpenAIROS")
 
         return obs, reward, done, info
 
     def reset(self):
-        self.init_linear_forward_speed = numpy.random.uniform(-1,1)
-        self.init_linear_turn_speed = numpy.random.uniform(-1,1)
+        self.step_number = 0
         rospy.logdebug("Reseting RobotGazeboEnvironment")
         self._reset_sim()
         self._init_env_variables()
@@ -70,6 +71,7 @@ class RobotGazeboEnv(gym.Env):
         obs = self._get_obs()
         rospy.logdebug("END Reseting RobotGazeboEnvironment")
         return obs
+        
 
     def close(self):
         """
@@ -119,11 +121,16 @@ class RobotGazeboEnv(gym.Env):
 
             with open("/home/lab/openai_ws/src/dql_sumo/gazebo_sumo/spwan_node/ball/ball.sdf", "r") as f:
                 product_xml = f.read()
-            
-            random_pose = numpy.random.uniform(low=-2.5, high=2.5, size=2) 
+            rx = numpy.random.uniform(low=-2.4, high=2.4) 
+            if rx < 1.0 and rx > -1.0:
+                ry = numpy.random.uniform(low=1.0, high=2.4)*(-1)**numpy.random.randint(0,2) 
+            else:
+                ry = numpy.random.uniform(low=-2.4, high=2.4) 
+
+            random_pose = numpy.array([rx,ry])
 
             orient = Quaternion(*tf.transformations.quaternion_from_euler(0,0,0))
-            item_name   =   "ball_{0}".format(self.episode_num+1)
+            item_name   =   "ball"
             item_pose   =   Pose(Point(x=random_pose[0], y=random_pose[1],    z=0.5),   orient)
             self.spawn_model(item_name, product_xml, "", item_pose, "world")
             #print("Spawning model:%s", item_name)
@@ -131,7 +138,7 @@ class RobotGazeboEnv(gym.Env):
     def _del_model(self):
         rospy.wait_for_service("gazebo/delete_model")
         delete_model = rospy.ServiceProxy("gazebo/delete_model", DeleteModel)
-        item_name = "ball_{0}".format(self.episode_num)
+        item_name = "ball"
         #print("Deleting model:%s", item_name)
         delete_model(item_name)
                 
